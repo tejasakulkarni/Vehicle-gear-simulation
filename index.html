@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gearbox Studio</title>
+    <style>
+        :root {
+            --bg: #060a12;
+            --panel: #101729;
+            --panel-soft: #161f34;
+            --accent: #2ee6b1;
+            --accent-soft: rgba(46, 230, 177, 0.18);
+            --warning: #ffb347;
+            --danger: #ff6b6b;
+            --text: #f7faff;
+            --text-dim: #95a3c3;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", "Roboto", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 15% 20%, #162347 0%, #060a12 60%);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(1.5rem, 3vw, 3rem);
+        }
+
+        .shell {
+            width: min(1100px, 100%);
+            background: rgba(8, 11, 20, 0.85);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 30px 140px rgba(0, 0, 0, 0.7);
+            padding: clamp(1.8rem, 3vw, 3rem);
+            backdrop-filter: blur(24px);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(1.7rem, 4vw, 2.7rem);
+            letter-spacing: 0.08em;
+        }
+
+        .connection-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .connection-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.6);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        .connection-dot.online {
+            background: var(--accent);
+            box-shadow: 0 0 16px rgba(46, 230, 177, 0.8);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 22px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.35);
+        }
+
+        .dial {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dial svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .needle {
+            position: absolute;
+            width: 6px;
+            height: 120px;
+            max-height: 40%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--accent));
+            border-radius: 999px;
+            transform-origin: bottom center;
+            bottom: 50%;
+            transition: transform 0.15s ease-out;
+        }
+
+        .speed-label {
+            position: absolute;
+            text-align: center;
+        }
+
+        .speed-label span {
+            display: block;
+            color: var(--text-dim);
+            letter-spacing: 0.4em;
+            font-size: 0.85rem;
+        }
+
+        .speed-label strong {
+            font-size: clamp(2.8rem, 10vw, 4rem);
+            font-weight: 600;
+        }
+
+        .readouts {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .readout-block h2 {
+            margin: 0;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            color: var(--text-dim);
+        }
+
+        .gear-value {
+            font-size: clamp(3rem, 8vw, 4rem);
+            margin-top: 0.4rem;
+            color: var(--accent);
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem 0.8rem;
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+        }
+
+        .badge.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .telemetry {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .telemetry .item {
+            background: var(--panel-soft);
+            border-radius: 16px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .telemetry .item .value {
+            display: block;
+            font-size: 1.4rem;
+            margin-top: 0.3rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .controls button {
+            flex: 1;
+            min-width: 200px;
+            padding: 1.1rem;
+            border: none;
+            border-radius: 18px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s;
+        }
+
+        .controls button:active {
+            transform: translateY(2px);
+            filter: brightness(0.92);
+        }
+
+        .btn-accel {
+            background: linear-gradient(120deg, #00c6ff, #2ee6b1);
+            box-shadow: 0 15px 40px rgba(46, 230, 177, 0.35);
+        }
+
+        .btn-brake {
+            background: linear-gradient(120deg, #ff758c, #ff7eb3);
+            box-shadow: 0 15px 40px rgba(255, 117, 140, 0.35);
+        }
+
+        .btn-reset {
+            flex: 0 0 auto;
+            min-width: 140px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-dim);
+        }
+
+        footer {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header>
+            <div>
+                <h1>Gearbox Studio</h1>
+                <p style="margin:0;color:var(--text-dim);">Hold a control to stream deltas to the C backend on port 8080.</p>
+            </div>
+            <div class="connection-pill">
+                <span class="connection-dot" id="connectionDot"></span>
+                <span id="connectionLabel">offline</span>
+            </div>
+        </header>
+
+        <section class="grid">
+            <article class="card dial">
+                <svg viewBox="0 0 320 320" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="gaugeTrack" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ff6b6b"/>
+                            <stop offset="40%" stop-color="#ffb347"/>
+                            <stop offset="100%" stop-color="#2ee6b1"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M60,220 A100,100 0 0 1 260,220" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="22"
+                          stroke-linecap="round"/>
+                    <path id="gaugeFill" d="M60,220 A100,100 0 0 1 260,220" fill="none" stroke="url(#gaugeTrack)" stroke-width="22"
+                          stroke-linecap="round" stroke-dasharray="0 999"/>
+                </svg>
+                <div class="needle" id="needle"></div>
+                <div class="speed-label">
+                    <span>SPEED</span>
+                    <strong id="speedValue">0</strong>
+                    <small style="display:block;font-size:0.9rem;letter-spacing:0.2em;color:var(--text-dim);">km/h</small>
+                </div>
+            </article>
+
+            <article class="card readouts">
+                <div class="readout-block">
+                    <h2>GEAR</h2>
+                    <div class="gear-value" id="gearValue">1</div>
+                </div>
+                <div class="readout-block">
+                    <h2>SHIFT WINDOWS</h2>
+                    <div class="badge-row" id="gearBadges"></div>
+                </div>
+                <div class="readout-block">
+                    <h2>STATE</h2>
+                    <div class="status-chip" id="statusChip">COASTING</div>
+                </div>
+            </article>
+        </section>
+
+        <section class="telemetry">
+            <div class="item">
+                Drag mode
+                <span class="value" id="dragInfo">Normal</span>
+            </div>
+            <div class="item">
+                Max speed
+                <span class="value">160 km/h</span>
+            </div>
+            <div class="item">
+                Tick rate
+                <span class="value">60 ms</span>
+            </div>
+        </section>
+
+        <section class="controls card">
+            <button class="btn-accel" id="accelerateBtn">Accelerate</button>
+            <button class="btn-brake" id="brakeBtn">Brake</button>
+            <button class="btn-reset" id="resetBtn">Reset</button>
+        </section>
+
+        <footer>
+            Tip: you can keep the window focused and use touch or mouse hold to stream throttle/brake requests.
+        </footer>
+    </div>
+
+    <script>
+        const MAX_SPEED = 160;
+        const SERVER_DT = 0.06;
+        const POLL_MS = 60;
+        const gears = [
+            { min: 0, max: 32 },
+            { min: 32, max: 64 },
+            { min: 64, max: 96 },
+            { min: 96, max: 128 },
+            { min: 128, max: 160 }
+        ];
+
+        const accelerateBtn = document.getElementById('accelerateBtn');
+        const brakeBtn = document.getElementById('brakeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const speedEl = document.getElementById('speedValue');
+        const gearEl = document.getElementById('gearValue');
+        const statusChip = document.getElementById('statusChip');
+        const dragInfo = document.getElementById('dragInfo');
+        const badgesWrap = document.getElementById('gearBadges');
+        const gaugeFill = document.getElementById('gaugeFill');
+        const needle = document.getElementById('needle');
+        const connectionDot = document.getElementById('connectionDot');
+        const connectionLabel = document.getElementById('connectionLabel');
+
+        const state = {
+            speed: 0,
+            gear: 1,
+            accelerate: false,
+            brake: false,
+            busy: false,
+            connected: false
+        };
+
+        function setConnectionStatus(ok) {
+            state.connected = ok;
+            connectionDot.classList.toggle('online', ok);
+            connectionLabel.textContent = ok ? 'online' : 'offline';
+        }
+
+        function populateGears() {
+            gears.forEach((g, idx) => {
+                const span = document.createElement('span');
+                span.className = 'badge';
+                span.dataset.gear = idx + 1;
+                span.textContent = `G${idx + 1}: ${g.min}-${g.max}`;
+                badgesWrap.appendChild(span);
+            });
+        }
+
+        function updateGauge() {
+            const pct = Math.min(1, Math.max(0, state.speed / MAX_SPEED));
+            const arcLength = Math.PI * 100;
+            const dash = Math.max(0.0001, pct * arcLength);
+            gaugeFill.setAttribute('stroke-dasharray', `${dash} ${arcLength}`);
+
+            const min = -120;
+            const max = 120;
+            const angle = min + (max - min) * pct;
+            needle.style.transform = `rotate(${angle}deg)`;
+        }
+
+        function updateBadges() {
+            badgesWrap.querySelectorAll('.badge').forEach((badge) => {
+                badge.classList.toggle('active', Number(badge.dataset.gear) === state.gear);
+            });
+        }
+
+        function updateStatusChip() {
+            let text = 'COASTING';
+            let color = 'rgba(255, 255, 255, 0.06)';
+            if (state.accelerate && !state.brake) {
+                text = 'THROTTLE';
+                color = 'rgba(46, 230, 177, 0.2)';
+            } else if (state.brake) {
+                text = 'BRAKING';
+                color = 'rgba(255, 117, 140, 0.2)';
+            }
+            statusChip.textContent = text;
+            statusChip.style.background = color;
+        }
+
+        function render() {
+            speedEl.textContent = state.speed.toFixed(0);
+            gearEl.textContent = state.gear;
+            dragInfo.textContent = state.accelerate
+                ? 'Throttle'
+                : state.brake
+                ? 'High drag'
+                : 'Normal';
+            updateGauge();
+            updateBadges();
+            updateStatusChip();
+        }
+
+        function resetSimulation() {
+            state.accelerate = false;
+            state.brake = false;
+            render();
+        }
+
+        async function requestStep() {
+            if (state.busy) return;
+            state.busy = true;
+            const url = `/step?accelerate=${state.accelerate ? 1 : 0}&brake=${state.brake ? 1 : 0}`;
+            try {
+                const res = await fetch(url, { method: 'GET' });
+                if (!res.ok) throw new Error('bad status');
+                const payload = await res.json();
+                state.speed = payload.speed ?? state.speed;
+                state.gear = payload.gear ?? state.gear;
+                setConnectionStatus(true);
+            } catch (err) {
+                setConnectionStatus(false);
+            } finally {
+                state.busy = false;
+                render();
+            }
+        }
+
+        async function handleResetClick() {
+            try {
+                const res = await fetch('/reset', { method: 'GET' });
+                if (!res.ok) throw new Error('bad status');
+                const payload = await res.json();
+                state.speed = payload.speed ?? 0;
+                state.gear = payload.gear ?? 1;
+                state.accelerate = false;
+                state.brake = false;
+                state.lastLatency = 'reset';
+                setConnectionStatus(true);
+            } catch {
+                setConnectionStatus(false);
+            } finally {
+                render();
+            }
+        }
+
+        function bindHold(button, flagName) {
+            const setFlag = (value) => {
+                state[flagName] = value;
+                render();
+            };
+            const start = () => setFlag(true);
+            const end = () => setFlag(false);
+
+            button.addEventListener('mousedown', start);
+            button.addEventListener('touchstart', (evt) => { evt.preventDefault(); start(); }, { passive: false });
+            document.addEventListener('mouseup', end);
+            document.addEventListener('touchend', end);
+            document.addEventListener('touchcancel', end);
+        }
+
+        window.addEventListener('blur', () => {
+            state.accelerate = false;
+            state.brake = false;
+            render();
+        });
+
+        bindHold(accelerateBtn, 'accelerate');
+        bindHold(brakeBtn, 'brake');
+        resetBtn.addEventListener('click', handleResetClick);
+
+        populateGears();
+        setConnectionStatus(false);
+        render();
+        setInterval(requestStep, POLL_MS);
+    </script>
+</body>
+</html>
+
